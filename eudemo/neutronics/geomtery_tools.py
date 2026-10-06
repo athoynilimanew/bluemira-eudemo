@@ -10,25 +10,32 @@ from bluemira.geometry.tools import revolve_shape
 from matproplib.material import Material
 
 from eudemo.blanket import Blanket
+from eudemo.comp_managers import ThermalShield
+from eudemo.ivc.divertor_silhouette import Divertor
+from eudemo.vacuum_vessel import VacuumVessel
 
 
-def simplify_blanket_tree(
-    blanket: Blanket, material: Material | None = None
+def _simplify_xz_components(
+    xz_components: list[PhysicalComponent],
+    material: Material | None = None,
 ) -> list[Component]:
-    """
-    Simplify the current component tree of the blanket
-    for neutronics calculations.
+    """Create simplified xz/xyz component pairs.
+
+    Parameters
+    ----------
+    xz_components:
+        Physical components from the xz tree.
+    material:
+        Material assigned to the revolved components.
 
     Returns
     -------
     list[Component]
+        Simplified components for neutronics calculations.
     """
+    components = []
 
-    blanket_components = []
-
-    all_xz_phys = blanket.component().get_component("xz").get_component("BB").children
-
-    for xz_phys in all_xz_phys:
+    for xz_phys in xz_components:
         revolved_body = PhysicalComponent(
             name=xz_phys.name,
             shape=revolve_shape(
@@ -39,21 +46,105 @@ def simplify_blanket_tree(
             ),
             material=material,
         )
-
-        blanket_components.append(
+        components.append(
             Component(
                 name=xz_phys.name,
                 children=[
-                    Component(
-                        "xz",
-                        children=[xz_phys],
-                    ),
-                    Component(
-                        "xyz",
-                        children=[revolved_body],
-                    ),
+                    Component("xz", children=[xz_phys]),
+                    Component("xyz", children=[revolved_body]),
                 ],
             )
         )
 
-    return blanket_components
+    return components
+
+
+def simplify_blanket_tree(
+    blanket: Blanket, material: Material | None = None
+) -> list[Component]:
+    """Simplify the blanket component tree for neutronics calculations.
+
+    Parameters
+    ----------
+    blanket:
+        Blanket component.
+    material:
+        Material assigned to the revolved components.
+
+    Returns
+    -------
+    list[Component]
+        Simplified blanket components.
+    """
+    xz_components = blanket.component().get_component("xz").get_component("BB").children
+    return _simplify_xz_components(xz_components, material)
+
+
+def simplify_vacuum_vessel_tree(
+    vv: VacuumVessel, material: Material | None = None
+) -> list[Component]:
+    """Simplify the VacuumVessel component tree for neutronics calculations.
+
+    Parameters
+    ----------
+    vv:
+        Vacuum vessel component.
+    material:
+        Material assigned to the revolved components.
+
+    Returns
+    -------
+    list[Component]
+        Simplified vacuum vessel components.
+    """
+    xz_components = vv.component().get_component("xz").children
+
+    for xz_phys in xz_components:
+        xz_phys.name = f"VacuumVessel_{xz_phys.name}"
+
+    return _simplify_xz_components(xz_components, material)
+
+
+def simplify_thermal_shield_tree(
+    ts: ThermalShield, material: Material | None = None
+) -> list[Component]:
+    """Simplify the ThermalShield component tree for neutronics calculations.
+
+    Parameters
+    ----------
+    ts:
+        Thermal shield component.
+    material:
+        Material assigned to the revolved components.
+
+    Returns
+    -------
+    list[Component]
+        Simplified thermal shield components.
+    """
+    xz_components = [
+        *ts.component().get_component("VVTS").get_component("xz").children,
+        *ts.component().get_component("CryostatTS").get_component("xz").children,
+    ]
+    return _simplify_xz_components(xz_components, material)
+
+
+def simplify_divertor_tree(
+    div: Divertor, material: Material | None = None
+) -> list[Component]:
+    """Simplify the Divertor component tree for neutronics calculations.
+
+    Parameters
+    ----------
+    div:
+        Divertor component.
+    material:
+        Material assigned to the revolved components.
+
+    Returns
+    -------
+    list[Component]
+        Simplified divertor components.
+    """
+    xz_components = div.component().get_component("xz").children
+    return _simplify_xz_components(xz_components, material)
