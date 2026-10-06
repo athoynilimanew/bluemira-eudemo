@@ -7,8 +7,11 @@
 
 from copy import deepcopy
 from enum import Enum, auto
+from pathlib import Path
 
+import matplotlib.pyplot as plt
 from bluemira.base.components import Component, PhysicalComponent
+from bluemira.base.look_and_feel import bluemira_print
 from bluemira.base.reactor import Reactor
 from bluemira.geometry.tools import revolve_shape
 from bluemira.radiation_transport.generalised_neutronics.geometry import (
@@ -383,8 +386,59 @@ def simplify_divertor_tree(divertor: Divertor) -> list[Component]:
     return _create_multiple_xz_components(xz_phys_components, materials)
 
 
+def plot_desplining_comparisons(
+    orig_comps: list[Component],
+    desplined_comps: list[Component],
+    output_path: Path | None = None,
+):
+    """
+    Create comparison plots in the xz plane before and after
+    desplining components.
+    """
+    if output_path is None:
+        output_path = Path.cwd() / "outputs"
+
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    if len(orig_comps) != len(desplined_comps):
+        raise ValueError("orig_comps and desplined_comps must have the same length.")
+
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(12, 6),
+        sharex=True,
+        sharey=True,
+    )
+
+    for orig_comp, desplined_comp in zip(
+        orig_comps,
+        desplined_comps,
+        strict=True,
+    ):
+        orig_comp.plot_2d(ax=axes[0], show=False)
+        desplined_comp.plot_2d(ax=axes[0], show=False)
+
+    axes[0].set_title("Original")
+    axes[1].set_title("Desplined")
+
+    fig.tight_layout()
+
+    plot_path = output_path / "desplining_comparisons.png"
+
+    fig.savefig(plot_path, bbox_inches="tight")
+
+    bluemira_print(f"Plotted desplining comparisons as {plot_path}")
+
+    plt.show()
+
+
 def despline_reactor(
-    reactor: Reactor, geom_model: EUDEMOGeometryModel = EUDEMOGeometryModel.SIMPLE
+    reactor: Reactor,
+    geom_model: EUDEMOGeometryModel = EUDEMOGeometryModel.SIMPLE,
+    output_path: Path | None = None,
+    *,
+    plot_comparisons: bool = True,
 ) -> NeutronicsGeometryManager:
     """Despline the geometry of an EUDEMO reactor.
 
@@ -408,11 +462,22 @@ def despline_reactor(
     else:
         raise NotImplementedError
 
-    discretisations = len(all_comps) * [10]
+    discretisations = len(all_comps) * [50]
 
-    return NeutronicsGeometryManager.from_list_of_components(
+    desplined_geometry = NeutronicsGeometryManager.from_list_of_components(
         components=all_comps,
         discretisations=discretisations,
         overlap_tolerance=1e-10,
         gap_tolerance=1e-6,
     )
+
+    if plot_comparisons:
+        plot_desplining_comparisons(
+            orig_comps=[comp.get_component("xz") for comp in all_comps],
+            desplined_comp=desplined_geometry.component().get_component(
+                "xz", first=False
+            ),
+            output_path=output_path,
+        )
+
+    return desplined_geometry
