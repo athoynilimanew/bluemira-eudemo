@@ -368,6 +368,8 @@ def simplify_divertor_tree(divertor: Divertor) -> list[Component]:
     full 365 degrees so need to recreate.
     """
     xz_phys_components = divertor.component().get_component("xz").children
+    for xz_phys in xz_phys_components:
+        xz_phys.name = f"Divertor_{xz_phys.name}"
 
     materials = [
         divertor
