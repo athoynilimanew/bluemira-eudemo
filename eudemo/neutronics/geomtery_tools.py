@@ -474,7 +474,7 @@ def despline_reactor(
     if plot_comparisons:
         plot_desplining_comparisons(
             orig_comps=[comp.get_component("xz") for comp in all_comps],
-            desplined_comp=desplined_geometry.component().get_component(
+            desplined_comps=desplined_geometry.component().get_component(
                 "xz", first=False
             ),
             output_path=output_path,
