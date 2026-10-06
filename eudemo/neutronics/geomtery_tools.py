@@ -417,7 +417,7 @@ def plot_desplining_comparisons(
         strict=True,
     ):
         orig_comp.plot_2d(ax=axes[0], show=False)
-        desplined_comp.plot_2d(ax=axes[0], show=False)
+        desplined_comp.plot_2d(ax=axes[1], show=False)
 
     axes[0].set_title("Original")
     axes[1].set_title("Desplined")
