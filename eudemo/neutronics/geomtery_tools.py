@@ -383,40 +383,6 @@ def simplify_divertor_tree(divertor: Divertor) -> list[Component]:
     return _create_multiple_xz_components(xz_phys_components, materials)
 
 
-def get_all_simplified_components(
-    blanket: Blanket,
-    vacuum_vessel: VacuumVessel,
-    thermal_shield: ThermalShield,
-    divertor: Divertor,
-) -> list[Component]:
-    """Get all simplified components for neutronics calculations.
-
-    Parameters
-    ----------
-    blanket:
-        Blanket component.
-    vacuum_vessel:
-        Vacuum vessel component.
-    thermal_shield:
-        Thermal shield component.
-    divertor:
-        Divertor component.
-
-    Returns
-    -------
-    list[Component]
-        All simplified components.
-    """
-    # TODO: Provide appropriate Material Mapping
-
-    return [
-        *simplify_blanket_tree(blanket),
-        *simplify_vacuum_vessel_tree(vacuum_vessel),
-        *simplify_thermal_shield_tree(thermal_shield),
-        *simplify_divertor_tree(divertor),
-    ]
-
-
 def despline_reactor(
     reactor: Reactor, geom_model: EUDEMOGeometryModel = EUDEMOGeometryModel.SIMPLE
 ) -> NeutronicsGeometryManager:
@@ -435,12 +401,10 @@ def despline_reactor(
         Desplined reactor geometry.
     """
     if geom_model == EUDEMOGeometryModel.SIMPLE:
-        all_comps = get_all_simplified_components(
-            blanket=reactor.blanket,
-            vacuum_vessel=reactor.vacuum_vessel,
-            thermal_shield=reactor.thermal_shield,
-            divertor=reactor.divertor,
-        )
+        all_comps = [
+            *simplify_blanket_tree(reactor.blanket),
+            *simplify_divertor_tree(reactor.divertor),
+        ]
     else:
         raise NotImplementedError
 
