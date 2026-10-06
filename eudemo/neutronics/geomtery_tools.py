@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from bluemira.base.components import Component, PhysicalComponent
 from bluemira.base.look_and_feel import bluemira_print
 from bluemira.base.reactor import Reactor
+from bluemira.display.plotter import plot_2d
 from bluemira.geometry.tools import revolve_shape
 from bluemira.radiation_transport.generalised_neutronics.geometry import (
     NeutronicsGeometryManager,
@@ -417,7 +418,12 @@ def plot_desplining_comparisons(
         strict=True,
     ):
         orig_comp.plot_2d(ax=axes[0], show=False)
+        for wire in orig_comp.leaves[0].shape.boundary:
+            plot_2d(wire.vertexes.T, ax=axes[0], show=False)
+
         desplined_comp.plot_2d(ax=axes[1], show=False)
+        for wire in desplined_comp.leaves[0].shape.boundary:
+            plot_2d(wire.vertexes.T, ax=axes[1], show=False)
 
     axes[0].set_title("Original")
     axes[1].set_title("Desplined")
