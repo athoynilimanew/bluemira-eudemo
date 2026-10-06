@@ -12,7 +12,9 @@ from matproplib.material import Material
 from eudemo.blanket import Blanket
 
 
-def simplify_blanket_tree(blanket: Blanket, material: Material) -> list[Component]:
+def simplify_blanket_tree(
+    blanket: Blanket, material: Material | None = None
+) -> list[Component]:
     """
     Simplify the current component tree of the blanket
     for neutronics calculations.
