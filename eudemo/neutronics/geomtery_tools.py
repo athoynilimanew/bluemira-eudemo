@@ -468,7 +468,8 @@ def despline_reactor(
     else:
         raise NotImplementedError
 
-    discretisations = len(all_comps) * [50]
+    # TODO: remove this hardcoded constant discretisation
+    discretisations = len(all_comps) * [25]
 
     desplined_geometry = NeutronicsGeometryManager.from_list_of_components(
         components=all_comps,
