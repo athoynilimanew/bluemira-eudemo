@@ -17,9 +17,9 @@ def simplify_blanket_tree(blanket: Blanket, material: Material) -> list[Componen
     Simplify the current component tree of the blanket
     for neutronics calculations.
 
-
-
-
+    Returns
+    -------
+    list[Component]
     """
 
     blanket_components = []
