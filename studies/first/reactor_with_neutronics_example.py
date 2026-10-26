@@ -29,7 +29,7 @@ from bluemira.base.look_and_feel import bluemira_error
 from bluemira.base.reactor_config import ReactorConfig
 from bluemira.materials.cache import establish_material_cache
 from bluemira.radiation_transport.axisymmetric_neutronics.neutronics_reactor import (
-    NeutronincsModel,
+    NeutronicsModel,
 )
 from reactor import (
     EUDEMO,
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         csg_reactor = EUDEMONeutronicsReactor(
             neutronics_config=reactor_config.config_for("Neutronics").get("CSG"),
             params=reactor_config.params_for("Neutronics"),
-            model=NeutronincsModel.SIMPLE,
+            model=NeutronicsModel.SIMPLE,
             reactor=reactor,
         )
 

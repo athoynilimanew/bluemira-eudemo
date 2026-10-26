@@ -13,7 +13,7 @@ from bluemira.base.reactor import Reactor
 from bluemira.geometry.tools import revolve_shape
 from bluemira.radiation_transport.axisymmetric_neutronics.neutronics_reactor import (
     AxisymmetricNeutronicsReactor,
-    NeutronincsModel,
+    NeutronicsModel,
 )
 from matproplib.material import Material
 
@@ -369,7 +369,7 @@ class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
     """EUDEMO Axis-symmetric neutronics model"""
 
     def get_all_components(
-        self, reactor: Reactor, model: NeutronincsModel = NeutronincsModel.SIMPLE
+        self, reactor: Reactor, model: NeutronicsModel = NeutronicsModel.SIMPLE
     ) -> list[Component]:
         """
         Get all relevant components for the reactor
@@ -380,7 +380,7 @@ class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
             list of components.
         """
 
-        if model == NeutronincsModel.SIMPLE:
+        if model == NeutronicsModel.SIMPLE:
             return [
                 *simplify_blanket_tree(reactor.blanket),
                 *simplify_divertor_tree(reactor.divertor),
