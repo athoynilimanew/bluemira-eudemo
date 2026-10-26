@@ -387,7 +387,8 @@ class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
             ]
         raise NotImplementedError
 
-    def default_discretisations(self, comp_name: str) -> int:
+    @staticmethod
+    def default_discretisations(comp_name: str) -> int:
         """
         Return the default spline discretisation for a component.
 
