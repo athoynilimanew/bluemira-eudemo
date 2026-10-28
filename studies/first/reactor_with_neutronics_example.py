@@ -31,6 +31,7 @@ from bluemira.materials.cache import establish_material_cache
 from bluemira.radiation_transport.axisymmetric_neutronics.neutronics_reactor import (
     NeutronicsModel,
 )
+from matproplib.conditions import OperationalConditions
 from reactor import (
     EUDEMO,
     build_blanket,
@@ -146,6 +147,9 @@ if __name__ == "__main__":
         )
 
         csg_reactor.geometry.plot("xz")
+        csg_reactor.run_mcio(
+            op_cond=OperationalConditions(temperature=298, pressure=101325)
+        )
         neutronics_end = time.time()
         run_time_track["CSG neutronics"] = neutronics_end - neutronics_start
 
