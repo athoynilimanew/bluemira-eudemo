@@ -399,3 +399,7 @@ class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
         # TODO: remove this hardcoded constant discretisation
         bluemira_print(f"Using a constant discretisation for{comp_name}")
         return 100
+
+    def customised_tallies(self, model):
+        """Optionally customise the model tallies."""
+        pass
