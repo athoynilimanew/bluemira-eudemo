@@ -48,7 +48,7 @@ from eudemo.equilibria import (
 from eudemo.ivc import design_ivc
 from eudemo.maintenance.upper_port import UpperPortKOZDesigner
 from eudemo.model_managers import EquilibriumManager
-from eudemo.neutronics.geomtery_tools import EUDEMONeutronicsReactor
+from eudemo.neutronics.axisymmetric_neutronics_routines import EUDEMONeutronicsReactor
 from eudemo.params import EUDEMOReactorParams
 
 STUDY = Path(__file__).parent
