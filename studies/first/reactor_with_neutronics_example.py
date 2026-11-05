@@ -27,6 +27,8 @@ from bluemira.base.designer import run_designer
 from bluemira.base.logs import set_log_level
 from bluemira.base.look_and_feel import bluemira_error
 from bluemira.base.reactor_config import ReactorConfig
+from bluemira.codes.openmc.sources import make_tokamak_source
+from bluemira.codes.wrapper import neutronics_code_solver
 from bluemira.materials.cache import establish_material_cache
 from bluemira.radiation_transport.axisymmetric_neutronics.neutronics_reactor import (
     NeutronicsModel,
@@ -147,8 +149,18 @@ if __name__ == "__main__":
         )
 
         csg_reactor.geometry.plot("xz")
-        csg_reactor.run_mcio(
-            op_cond=OperationalConditions(temperature=298, pressure=101325)
+        solver = neutronics_code_solver(
+            reactor_config.params_for("Neutronics"),
+            reactor_config.config_for("Neutronics").get("CSG"),
+            csg_reactor,
+            reference_eq,
+            source=make_tokamak_source,
+            op_cond=OperationalConditions(temperature=298, pressure=101325),
+            use_mcio=True,
+        )
+
+        outputs = solver.execute(
+            reactor_config.config_for("Neutronics").get("CSG").get("run_mode", "run")
         )
         neutronics_end = time.time()
         run_time_track["CSG neutronics"] = neutronics_end - neutronics_start
