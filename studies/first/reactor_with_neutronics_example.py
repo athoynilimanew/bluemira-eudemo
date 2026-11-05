@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
         neutronics_start = time.time()
         csg_reactor = EUDEMONeutronicsReactor(
-            neutronics_config=reactor_config.config_for("Neutronics").get("CSG"),
+            neutronics_config=reactor_config.config_for("Neutronics", "CSG"),
             params=reactor_config.params_for("Neutronics"),
             model=NeutronicsModel.SIMPLE,
             reactor=reactor,
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         csg_reactor.geometry.plot("xz")
         solver = neutronics_code_solver(
             reactor_config.params_for("Neutronics"),
-            reactor_config.config_for("Neutronics").get("CSG"),
+            reactor_config.config_for("Neutronics", "CSG"),
             csg_reactor,
             reference_eq,
             source=make_tokamak_source,
