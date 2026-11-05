@@ -128,16 +128,13 @@
     "plot_pixel_per_metre": 100,
     "CSG": {
       "enabled": true,
-      "neutronics_output_path": "$path_expand:../neutronics_output/csg",
+      "neutronics_output_path": "$path_expand:./neutronics/csg",
       "particles": 100000,
       "batches": 2,
       "run_mode": "run_and_plot",
       "openmc_write_summary": false,
       "blanket_type": "HCPB",
-      "show_data": false,
-      "plot_comparisons": true,
-      "overlap_tolerance": 1e-10,
-      "gap_tolerance": 1e-6
+      "show_data": false
     },
     "DAGMC": {
       "enabled": false,
