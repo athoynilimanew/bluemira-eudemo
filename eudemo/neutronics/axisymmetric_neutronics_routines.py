@@ -166,7 +166,9 @@ def simplify_blanket_tree(blanket: Blanket) -> list[Component]:
     return _create_multiple_xz_components(xz_phys_components, materials)
 
 
-def simplify_vacuum_vessel_tree(vacuum_vessel: VacuumVessel) -> list[Component]:
+def simplify_vacuum_vessel_tree(
+    vacuum_vessel: VacuumVessel, *, with_ports: bool = False
+) -> list[Component]:
     """Simplify the VacuumVessel component tree for neutronics calculations.
 
     Parameters
@@ -176,12 +178,12 @@ def simplify_vacuum_vessel_tree(vacuum_vessel: VacuumVessel) -> list[Component]:
 
     Returns
     -------
-    list[Component]
+    :
         Simplified vacuum vessel components.
 
     Note
     -------
-    EUDEMO vacuum vessel xz and xyz Tree Structure,
+    EUDEMO vacuum vessel xz and xyz Tree Structure, (with ports)
     as of Oct 2026 for reference
 
     VacuumVessel (Component)
@@ -206,24 +208,52 @@ def simplify_vacuum_vessel_tree(vacuum_vessel: VacuumVessel) -> list[Component]:
     # TODO: Remove the hard codes and create a cleaner way to do the same
     vv_xyz = vacuum_vessel.component().get_component("xyz").get_component("Sector 1")
 
-    body_mat = next(child.material for child in vv_xyz.children if child.name == "Body")
+    if with_ports:
+        body_mat_0 = next(
+            child.material for child in vv_xyz.children if child.name == "Body 0"
+        )
+        body_mat_1 = next(
+            child.material for child in vv_xyz.children if child.name == "Body 1"
+        )
+        body_mat_2 = next(
+            child.material for child in vv_xyz.children if child.name == "Body 2"
+        )
 
-    void_mat = next(
-        child.material for child in vv_xyz.children if child.name == "Vessel voidspace"
-    )
+        void_mat = next(
+            child.material
+            for child in vv_xyz.children
+            if child.name == "Vessel voidspace 0"
+        )
 
-    materials = [body_mat, body_mat, body_mat, void_mat]
+        materials = [body_mat_0, body_mat_1, body_mat_2, void_mat]
+
+    else:
+        body_mat = next(
+            child.material for child in vv_xyz.children if child.name == "Body 1"
+        )
+
+        void_mat = next(
+            child.material
+            for child in vv_xyz.children
+            if child.name == "Vessel voidspace 1"
+        )
+
+        materials = [body_mat, void_mat]
 
     return _create_multiple_xz_components(xz_phys_components, materials)
 
 
-def simplify_thermal_shield_tree(thermal_shield: ThermalShield) -> list[Component]:
+def simplify_thermal_shield_tree(
+    thermal_shield: ThermalShield, *, with_ports: bool = False
+) -> list[Component]:
     """Simplify the ThermalShield component tree for neutronics calculations.
 
     Parameters
     ----------
     thermal_shield:
         Thermal shield component.
+    with_ports:
+        Whether to include port-related material subdivisions.
 
     Returns
     -------
@@ -232,88 +262,50 @@ def simplify_thermal_shield_tree(thermal_shield: ThermalShield) -> list[Componen
 
     Note
     -------
-    EUDEMO thermal shield xz and xyz Tree Structure,
-    as of Oct 2026 for reference
+    EUDEMO thermal shield xz and xyz tree structure,
+    as of Oct 2026.
 
-    Thermal Shield (Component)
-    ├── VVTS (Component)
-    │   ├── xyz (Component)
-    │   │   └── Sector 1 (Component)
-    │   │       ├── VVTS 1 (PhysicalComponent)
-    │   │       └── VVTS voidspace 1 (PhysicalComponent)
-    │   ├── xz (Component)
-    │   │   ├── VVTS 1 0 (PhysicalComponent)
-    │   │   ├── VVTS 1 1 (PhysicalComponent)
-    │   │   ├── VVTS 1 2 (PhysicalComponent)
-    │   │   └── VVTS voidspace 1 0 (PhysicalComponent)
-    └── CryostatTS (Component)
-        ├── xyz (Component)
-        │   └── Sector 1 (Component)
-        │       ├── Cryostat TS 1 (PhysicalComponent)
-        │       └── Cryostat voidspace 1 (PhysicalComponent)
-        ├── xz (Component)
-        │   ├── Cryostat TS 1 0 (PhysicalComponent)
-        │   ├── Cryostat TS 1 1 (PhysicalComponent)
-        │   ├── Cryostat TS 1 2 (PhysicalComponent)
-        │   ├── Cryostat TS 1 3 (PhysicalComponent)
-        │   └── Cryostat voidspace 1 0 (PhysicalComponent)
-
-    The xyz representation is not for full 365 degrees
-    so need to recreate
+    The xyz representation is not for full 360 degrees,
+    so it needs to be recreated.
     """
+    vvts = thermal_shield.component().get_component("VVTS")
+    cryostat_ts = thermal_shield.component().get_component("CryostatTS")
+
     xz_phys_components = [
-        *thermal_shield.component().get_component("VVTS").get_component("xz").children,
-        *thermal_shield
-        .component()
-        .get_component("CryostatTS")
-        .get_component("xz")
-        .children,
+        *vvts.get_component("xz").children,
+        *cryostat_ts.get_component("xz").children,
     ]
 
-    # TODO: Remove the hard codes and create a cleaner way to do the same
-    vvts_xyz = (
-        thermal_shield
-        .component()
-        .get_component("VVTS")
-        .get_component("xyz")
-        .get_component("Sector 1")
-    )
+    # Get materials from the corresponding xyz representations.
+    vvts_xyz = vvts.get_component("xyz").get_component("Sector 1")
+    cryostat_xyz = cryostat_ts.get_component("xyz").get_component("Sector 1")
 
-    vvts_mat = next(
-        child.material for child in vvts_xyz.children if child.name == "VVTS 1"
-    )
-    void_mat = next(
-        child.material for child in vvts_xyz.children if child.name == "VVTS voidspace 1"
-    )
+    vvts_materials = {child.name: child.material for child in vvts_xyz.children}
+    cryostat_materials = {child.name: child.material for child in cryostat_xyz.children}
 
-    cryo_xyz = (
-        thermal_shield
-        .component()
-        .get_component("CryostatTS")
-        .get_component("xyz")
-        .get_component("Sector 1")
-    )
+    if with_ports:
+        materials = [
+            vvts_materials["VVTS 1"],
+            vvts_materials["VVTS 1"],
+            vvts_materials["VVTS 1"],
+            vvts_materials["VVTS voidspace 1"],
+            cryostat_materials["Cryostat TS 1"],
+            cryostat_materials["Cryostat TS 1"],
+            cryostat_materials["Cryostat TS 1"],
+            cryostat_materials["Cryostat TS 1"],
+            cryostat_materials["Cryostat voidspace 1"],
+        ]
+    else:
+        materials = [
+            vvts_materials["VVTS 1"],
+            vvts_materials["VVTS voidspace 1"],
+            cryostat_materials["Cryostat TS 1"],
+            cryostat_materials["Cryostat voidspace 1"],
+        ]
 
-    ts_mat = next(
-        child.material for child in cryo_xyz.children if child.name == "Cryostat TS 1"
-    )
-    cryo_void_mat = next(
-        child.material
-        for child in cryo_xyz.children
-        if child.name == "Cryostat voidspace 1"
-    )
+    for component in xz_phys_components:
+        component.name = f"ThermalShield_{component.name}"
 
-    materials = [
-        vvts_mat,
-        vvts_mat,
-        vvts_mat,
-        void_mat,
-        ts_mat,
-        ts_mat,
-        ts_mat,
-        ts_mat,
-        cryo_void_mat,
-    ]
     return _create_multiple_xz_components(xz_phys_components, materials)
 
 
@@ -368,9 +360,7 @@ def simplify_divertor_tree(divertor: Divertor) -> list[Component]:
 class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
     """EUDEMO Axis-symmetric neutronics model"""
 
-    def get_all_components(
-        self, reactor: Reactor, model: NeutronicsModel = NeutronicsModel.SIMPLE
-    ) -> list[Component]:
+    def get_all_components(self, reactor: Reactor) -> list[Component]:
         """
         Get all relevant components for the reactor
 
@@ -380,18 +370,18 @@ class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
             list of components.
         """
 
-        if model == NeutronicsModel.SIMPLE:
+        if self.model == NeutronicsModel.SIMPLE:
             return [
                 *simplify_blanket_tree(reactor.blanket),
                 *simplify_divertor_tree(reactor.divertor),
-                *simplify_vacuum_vessel_tree(reactor.vacuum_vessel),
+                *simplify_vacuum_vessel_tree(reactor.vacuum_vessel, with_ports=False),
             ]
-        if model == NeutronicsModel.ADVANCED:
+        if self.model == NeutronicsModel.ADVANCED:
             return [
                 *simplify_blanket_tree(reactor.blanket),
                 *simplify_divertor_tree(reactor.divertor),
-                *simplify_vacuum_vessel_tree(reactor.vacuum_vessel),
-                *simplify_thermal_shield_tree(reactor.thermal_shield),
+                *simplify_vacuum_vessel_tree(reactor.vacuum_vessel, with_ports=False),
+                *simplify_thermal_shield_tree(reactor.thermal_shield, with_ports=False),
             ]
         raise NotImplementedError
 
