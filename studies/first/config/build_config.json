@@ -126,7 +126,7 @@
     "plot_axis": "xz",
     "plot_pixel_per_metre": 100,
     "CSG": {
-      "enabled": false,
+      "enabled": true,
       "neutronics_output_path": "$path_expand:./neutronics/csg",
       "particles": 100000,
       "batches": 2,

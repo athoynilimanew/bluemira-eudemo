@@ -187,8 +187,8 @@ def simplify_vacuum_vessel_tree(vacuum_vessel: VacuumVessel) -> list[Component]:
     VacuumVessel (Component)
     ├── xyz (Component)
     │   └── Sector 1 (Component)
-    │       ├── Body (PhysicalComponent)
-    │       └── Vessel voidspace (PhysicalComponent)
+    │       ├── Body 1 (PhysicalComponent)
+    │       └── Vessel voidspace 1 (PhysicalComponent)
     ├── xz (Component)
     │   ├── Body 0 (PhysicalComponent)
     │   ├── Body 1 (PhysicalComponent)
@@ -206,13 +206,15 @@ def simplify_vacuum_vessel_tree(vacuum_vessel: VacuumVessel) -> list[Component]:
     # TODO: Remove the hard codes and create a cleaner way to do the same
     vv_xyz = vacuum_vessel.component().get_component("xyz").get_component("Sector 1")
 
-    body_mat = next(child.material for child in vv_xyz.children if child.name == "Body")
-
-    void_mat = next(
-        child.material for child in vv_xyz.children if child.name == "Vessel voidspace"
+    body_mat = next(
+        child.material for child in vv_xyz.children if child.name == "Body 1"
     )
 
-    materials = [body_mat, body_mat, body_mat, void_mat]
+    void_mat = next(
+        child.material for child in vv_xyz.children if child.name == "Vessel voidspace 1"
+    )
+
+    materials = [body_mat, void_mat]
 
     return _create_multiple_xz_components(xz_phys_components, materials)
 
@@ -384,6 +386,7 @@ class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
             return [
                 *simplify_blanket_tree(reactor.blanket),
                 *simplify_divertor_tree(reactor.divertor),
+                *simplify_vacuum_vessel_tree(reactor.vacuum_vessel),
             ]
         raise NotImplementedError
 
