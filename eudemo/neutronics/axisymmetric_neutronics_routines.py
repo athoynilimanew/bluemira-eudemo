@@ -18,7 +18,7 @@ from bluemira.radiation_transport.axisymmetric_neutronics.neutronics_reactor imp
 from matproplib.material import Material
 
 from eudemo.blanket import Blanket
-from eudemo.comp_managers import ThermalShield
+from eudemo.comp_managers import RadiationShield, ThermalShield
 from eudemo.ivc.divertor_silhouette import Divertor
 from eudemo.vacuum_vessel import VacuumVessel
 
@@ -243,6 +243,65 @@ def simplify_vacuum_vessel_tree(
     return _create_multiple_xz_components(xz_phys_components, materials)
 
 
+def simplify_radiation_shield_tree(
+    radiation_shield: RadiationShield, *, with_plugs: bool = False
+) -> list[Component]:
+    """Simplify the RadiationShield component tree for neutronics calculations.
+
+    Parameters
+    ----------
+    radiation_shield:
+        Radiation shield component.
+    with_plugs:
+        Whether to include plugs in the radiation shield.
+
+    Returns
+    -------
+    list[Component]
+        Simplified radiation shield components.
+
+    Note
+    -------
+    EUDEMO radiation shield xz, xy and xyz Tree Structure,
+    as of Oct 2026 for reference. (withput plugs)
+
+    RadiationShield (Component)
+    ├── xz (Component)
+    │   └── Body (PhysicalComponent)
+    ├── xy (Component)
+    │   └── Body (PhysicalComponent)
+    └── xyz (Component)
+        └── Sector 1 (Component)
+            └── Body 1 (PhysicalComponent)
+
+    The xyz representation is not for full 360 degrees
+    so need to recreate
+
+    Raises
+    ------
+    NotImplementedError
+        if with_plugs = True
+    """
+    if with_plugs:
+        raise NotImplementedError("Radiation shield with plugs is not yet implemented.")
+
+    xz_phys_components = radiation_shield.component().get_component("xz").children
+
+    for xz_phys in xz_phys_components:
+        xz_phys.name = f"RadiationShield_{xz_phys.name}"
+
+    # TODO: Remove the hard codes and create a cleaner way to do the same.
+    rs_xyz = radiation_shield.component().get_component("xyz").get_component("Sector 1")
+
+    body_mat = next(
+        child.material for child in rs_xyz.children if child.name == "Body 1"
+    )
+
+    materials = [body_mat]
+
+    return _create_multiple_xz_components(xz_phys_components, materials)
+
+
 def simplify_thermal_shield_tree(
     thermal_shield: ThermalShield, *, with_ports: bool = False
 ) -> list[Component]:
@@ -261,8 +320,7 @@ def simplify_thermal_shield_tree(
         Simplified thermal shield components.
 
     Note
-    -------
-    EUDEMO thermal shield xz and xyz tree structure,
+    -------    EUDEMO thermal shield xz and xyz tree structure,
     as of Oct 2026.
 
     The xyz representation is not for full 360 degrees,
@@ -382,6 +440,9 @@ class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
                 *simplify_divertor_tree(reactor.divertor),
                 *simplify_vacuum_vessel_tree(reactor.vacuum_vessel, with_ports=False),
                 *simplify_thermal_shield_tree(reactor.thermal_shield, with_ports=False),
+                *simplify_radiation_shield_tree(
+                    reactor.radiation_shield, with_plugs=False
+                ),
             ]
         raise NotImplementedError
 
