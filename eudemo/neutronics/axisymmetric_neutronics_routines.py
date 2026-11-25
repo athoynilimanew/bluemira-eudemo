@@ -20,6 +20,7 @@ from matproplib.material import Material
 from eudemo.blanket import Blanket
 from eudemo.comp_managers import RadiationShield, ThermalShield
 from eudemo.ivc.divertor_silhouette import Divertor
+from eudemo.tf_coils import TFCoil
 from eudemo.vacuum_vessel import VacuumVessel
 
 
@@ -415,6 +416,92 @@ def simplify_divertor_tree(divertor: Divertor) -> list[Component]:
     return _create_multiple_xz_components(xz_phys_components, materials)
 
 
+def simplify_tf_coil_tree(tf_coil: TFCoil) -> list[Component]:
+    """Simplify the TFCoil component tree for neutronics calculations.
+
+    Parameters
+    ----------
+    tf_coil:
+        TF coil component.
+
+    Returns
+    -------
+    list[Component]
+        Simplified TF coil components.
+
+    Note
+    -------
+    EUDEMO TF coil xz, xy and xyz Tree Structure,
+    as of Oct 2026 for reference.
+
+    TFCoil (Component)
+    ├── xz (Component)
+    │   ├── Winding Pack (PhysicalComponent)
+    │   ├── Insulation (Component)
+    │   │   ├── outer (PhysicalComponent)
+    │   │   └── inner (PhysicalComponent)
+    │   └── Casing (Component)
+    │       ├── inner (PhysicalComponent)
+    │       └── outer (PhysicalComponent)
+    ├── xy (Component)
+    │   ├── Sector 1 (Component)
+    │   │   ├── Winding Pack 1 (Component)
+    │   │   ├── Insulation 1 (Component)
+    │   │   └── Casing 1 (Component)
+    │   ├── Sector 2 (Component)
+    │   │   ├── Winding Pack 2 (Component)
+    │   │   ├── Insulation 2 (Component)
+    │   │   └── Casing 2 (Component)
+    │   ├── ...
+    │   └── Sector 16 (Component)
+    │       ├── Winding Pack 16 (Component)
+    │       ├── Insulation 16 (Component)
+    │       └── Casing 16 (Component)
+    └── xyz (Component)
+        └── Sector 1 (Component)
+            ├── Winding Pack 1 (PhysicalComponent)
+            ├── Insulation 1 (PhysicalComponent)
+            └── Casing 1 (PhysicalComponent)
+
+    The xyz representation is not for full 360 degrees
+    so need to recreate
+    """
+    xz = tf_coil.component().get_component("xz")
+
+    xz_phys_components = [
+        xz.get_component("Winding Pack"),
+        *xz.get_component("Insulation").children,
+        *xz.get_component("Casing").children,
+    ]
+    xz_phys_components[0].name = f"TFCoil_{xz_phys_components[0].name}"
+    xz_phys_components[1].name = f"TFCoil_Insulation_{xz_phys_components[1].name}"
+    xz_phys_components[2].name = f"TFCoil_Insulation_{xz_phys_components[2].name}"
+    xz_phys_components[3].name = f"TFCoil_Casing_{xz_phys_components[3].name}"
+    xz_phys_components[4].name = f"TFCoil_Casing_{xz_phys_components[4].name}"
+
+    # TODO: Remove the hard codes and create a cleaner way to do the same.
+    tf_xyz = tf_coil.component().get_component("xyz").get_component("Sector 1")
+
+    winding_pack_mat = next(
+        child.material for child in tf_xyz.children if child.name == "Winding Pack 1"
+    )
+    insulation_mat = next(
+        child.material for child in tf_xyz.children if child.name == "Insulation 1"
+    )
+    casing_mat = next(
+        child.material for child in tf_xyz.children if child.name == "Casing 1"
+    )
+
+    materials = [
+        winding_pack_mat,
+        insulation_mat,
+        insulation_mat,
+        casing_mat,
+        casing_mat,
+    ]
+    return _create_multiple_xz_components(xz_phys_components, materials)
+
+
 class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
     """EUDEMO Axis-symmetric neutronics model"""
 
@@ -433,6 +520,9 @@ class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
                 *simplify_blanket_tree(reactor.blanket),
                 *simplify_divertor_tree(reactor.divertor),
                 *simplify_vacuum_vessel_tree(reactor.vacuum_vessel, with_ports=False),
+                # *simplify_radiation_shield_tree(
+                #     reactor.radiation_shield, with_plugs=False
+                # )
             ]
         if self.model == NeutronicsModel.ADVANCED:
             return [
@@ -443,6 +533,7 @@ class EUDEMONeutronicsReactor(AxisymmetricNeutronicsReactor):
                 *simplify_radiation_shield_tree(
                     reactor.radiation_shield, with_plugs=False
                 ),
+                *simplify_tf_coil_tree(reactor.tf_coils),
             ]
         raise NotImplementedError
 
